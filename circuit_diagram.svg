@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 980" font-family="Arial, Helvetica, sans-serif" font-size="14">
+  <rect width="1500" height="980" fill="#ffffff"/>
+  <text x="750" y="30" text-anchor="middle" font-size="22" font-weight="bold">Smart Eco Station – Circuit Diagram</text>
+
+  <style>
+    .box { fill:#f4f6fa; stroke:#333; stroke-width:2; rx:8; }
+    .mcu { fill:#e3f0ff; stroke:#1f5fbf; stroke-width:3; }
+    .title { font-weight:bold; font-size:15px; }
+    .pin { font-size:13px; }
+    .pwr { font-size:12px; fill:#c62828; }
+    .gnd { font-size:12px; fill:#222; }
+    .spi { stroke:#1e6fd9; stroke-width:2.5; fill:none; }
+    .i2c { stroke:#2e9d4a; stroke-width:2.5; fill:none; }
+    .sig { stroke:#e67e00; stroke-width:2.5; fill:none; }
+    .uart { stroke:#8e44ad; stroke-width:2.5; fill:none; }
+    .p12 { stroke:#c62828; stroke-width:3; fill:none; }
+    .p5  { stroke:#c62828; stroke-width:2.5; fill:none; stroke-dasharray:0; }
+    .wifi { stroke:#555; stroke-width:2; fill:none; stroke-dasharray:8 6; }
+    .dot { fill:#333; }
+  </style>
+
+  <!-- ================= POWER ================= -->
+  <rect class="box" x="150" y="55" width="180" height="70"/>
+  <text class="title" x="240" y="82" text-anchor="middle">12V 2A Adapter</text>
+  <text class="pin" x="240" y="104" text-anchor="middle">+12V / GND</text>
+
+  <rect class="box" x="560" y="55" width="280" height="70"/>
+  <text class="title" x="700" y="82" text-anchor="middle">LM2596 Buck Converter</text>
+  <text class="pin" x="700" y="104" text-anchor="middle">IN 12V  →  OUT 5V (set 5.0V)</text>
+  <path class="p12" d="M330 90 H560"/>
+  <text class="pwr" x="445" y="84" text-anchor="middle">+12V</text>
+
+  <path class="p5" d="M840 90 H1000"/>
+  <text class="pwr" x="1005" y="95" font-size="14" font-weight="bold">5V RAIL → ESP32 VIN, CAM 5V, Servo, HC-SR04 ×2, LCD, Relay VCC</text>
+  <path class="p12" d="M240 125 V140 H1390 V555"/>
+  <text class="pwr" x="1300" y="135">+12V to Relay COM</text>
+
+  <!-- ================= ESP32 ================= -->
+  <rect class="mcu" x="560" y="170" width="280" height="620" rx="10"/>
+  <text x="700" y="480" text-anchor="middle" font-size="22" font-weight="bold" fill="#1f5fbf">ESP32</text>
+  <text x="700" y="505" text-anchor="middle" font-size="14" fill="#1f5fbf">DevKit V1 (Main)</text>
+
+  <!-- left pins -->
+  <g class="pin">
+    <text x="570" y="205">GPIO5 (SS)</text>
+    <text x="570" y="235">GPIO18 (SCK)</text>
+    <text x="570" y="265">GPIO23 (MOSI)</text>
+    <text x="570" y="295">GPIO19 (MISO)</text>
+    <text x="570" y="325">GPIO27</text>
+    <text x="570" y="355">3V3</text>
+    <text x="570" y="435">GPIO21 (SDA)</text>
+    <text x="570" y="465">GPIO22 (SCL)</text>
+    <text x="570" y="565">GPIO4</text>
+    <text x="570" y="685">GPIO16 (RX2)</text>
+    <text x="570" y="715">GPIO17 (TX2)</text>
+  </g>
+  <!-- right pins -->
+  <g class="pin" text-anchor="end">
+    <text x="830" y="205">GPIO32</text>
+    <text x="830" y="235">GPIO33</text>
+    <text x="830" y="335">GPIO25</text>
+    <text x="830" y="365">GPIO14</text>
+    <text x="830" y="465">GPIO13</text>
+    <text x="830" y="585">GPIO26</text>
+    <text x="830" y="705" fill="#c62828">VIN ← 5V RAIL</text>
+    <text x="830" y="745">GND ← COMMON GND</text>
+  </g>
+
+  <!-- ================= RC522 ================= -->
+  <rect class="box" x="150" y="170" width="180" height="200"/>
+  <text class="title" x="160" y="192">RC522 RFID</text>
+  <g class="pin" text-anchor="end">
+    <text x="322" y="205">SDA</text><text x="322" y="235">SCK</text>
+    <text x="322" y="265">MOSI</text><text x="322" y="295">MISO</text>
+    <text x="322" y="325">RST</text><text x="322" y="355">3.3V</text>
+  </g>
+  <text class="gnd" x="160" y="362">GND → GND</text>
+  <path class="spi" d="M330 200 H560 M330 230 H560 M330 260 H560 M330 290 H560 M330 320 H560"/>
+  <path class="p5" d="M330 350 H560"/>
+  <text class="pwr" x="445" y="345" text-anchor="middle">3.3V only!</text>
+
+  <!-- ================= LCD ================= -->
+  <rect class="box" x="150" y="400" width="180" height="100"/>
+  <text class="title" x="160" y="420">16×2 LCD + I2C</text>
+  <g class="pin" text-anchor="end"><text x="322" y="435">SDA</text><text x="322" y="465">SCL</text></g>
+  <text class="pwr" x="160" y="480">VCC → 5V</text>
+  <text class="gnd" x="160" y="494">GND → GND</text>
+  <path class="i2c" d="M330 430 H560 M330 460 H560"/>
+
+  <!-- ================= BUZZER ================= -->
+  <rect class="box" x="150" y="530" width="180" height="70"/>
+  <text class="title" x="160" y="552">Active Buzzer</text>
+  <text class="pin" x="322" y="565" text-anchor="end">+</text>
+  <text class="gnd" x="160" y="588">− → GND</text>
+  <path class="sig" d="M330 560 H560"/>
+
+  <!-- ================= ESP32-CAM ================= -->
+  <rect class="box" x="150" y="640" width="180" height="150"/>
+  <text class="title" x="160" y="662">ESP32-CAM</text>
+  <g class="pin" text-anchor="end">
+    <text x="322" y="685">U0T (GPIO1)</text>
+    <text x="322" y="715">U0R (GPIO3)</text>
+  </g>
+  <text class="pwr" x="160" y="745">5V → 5V RAIL</text>
+  <text class="gnd" x="160" y="762">GND → GND</text>
+  <text class="pin" x="160" y="780" font-size="11">Flash LED on GPIO4 (built in)</text>
+  <path class="uart" d="M330 680 H560 M330 710 H560"/>
+  <text x="445" y="673" text-anchor="middle" font-size="11" fill="#8e44ad">TX → RX</text>
+  <text x="445" y="728" text-anchor="middle" font-size="11" fill="#8e44ad">RX ← TX</text>
+
+  <!-- ================= HC-SR04 WET ================= -->
+  <rect class="box" x="1070" y="170" width="200" height="90"/>
+  <text class="title" x="1080" y="190">HC-SR04 (WET bin)</text>
+  <g class="pin"><text x="1080" y="205">TRIG</text><text x="1080" y="235">ECHO</text></g>
+  <text class="pwr" x="1150" y="220">VCC → 5V</text>
+  <text class="gnd" x="1150" y="248">GND → GND</text>
+  <path class="sig" d="M840 200 H1070"/>
+  <path class="sig" d="M840 230 H930 M990 230 H1070"/>
+  <rect x="930" y="222" width="60" height="16" fill="#fff3d6" stroke="#e67e00" stroke-width="2"/>
+  <text x="960" y="234" text-anchor="middle" font-size="10">1k / 2k</text>
+
+  <!-- ================= HC-SR04 DRY ================= -->
+  <rect class="box" x="1070" y="300" width="200" height="90"/>
+  <text class="title" x="1080" y="320">HC-SR04 (DRY bin)</text>
+  <g class="pin"><text x="1080" y="335">TRIG</text><text x="1080" y="365">ECHO</text></g>
+  <text class="pwr" x="1150" y="350">VCC → 5V</text>
+  <text class="gnd" x="1150" y="378">GND → GND</text>
+  <path class="sig" d="M840 330 H1070"/>
+  <path class="sig" d="M840 360 H930 M990 360 H1070"/>
+  <rect x="930" y="352" width="60" height="16" fill="#fff3d6" stroke="#e67e00" stroke-width="2"/>
+  <text x="960" y="364" text-anchor="middle" font-size="10">1k / 2k</text>
+
+  <!-- ================= SERVO ================= -->
+  <rect class="box" x="1070" y="420" width="200" height="90"/>
+  <text class="title" x="1080" y="440">Servo MG996R</text>
+  <text class="pin" x="1080" y="465">Signal (orange)</text>
+  <text class="pwr" x="1080" y="483">Red → 5V RAIL</text>
+  <text class="gnd" x="1080" y="500">Brown → GND</text>
+  <path class="sig" d="M840 460 H1070"/>
+
+  <!-- ================= RELAY + SOLENOID ================= -->
+  <rect class="box" x="1070" y="540" width="200" height="110"/>
+  <text class="title" x="1080" y="560">Relay Module 5V</text>
+  <text class="pin" x="1080" y="585">IN</text>
+  <text class="pwr" x="1080" y="605">VCC → 5V</text>
+  <text class="gnd" x="1080" y="622">GND → GND</text>
+  <g class="pin" text-anchor="end"><text x="1262" y="585">COM</text><text x="1262" y="615">NO</text></g>
+  <path class="sig" d="M840 580 H1070"/>
+  <path class="p12" d="M1390 555 V580 H1270"/>
+
+  <rect class="box" x="1300" y="660" width="170" height="100"/>
+  <text class="title" x="1310" y="682">Solenoid Lock</text>
+  <text class="pin" x="1310" y="702">12V DC</text>
+  <text class="pwr" x="1310" y="722">+ ← Relay NO</text>
+  <text class="gnd" x="1310" y="740">− → 12V GND</text>
+  <path class="p12" d="M1270 610 H1330 V660"/>
+  <text x="1310" y="790" font-size="11">1N4007 diode across lock</text>
+  <text x="1310" y="804" font-size="11">(stripe to +)</text>
+
+  <!-- ================= NETWORK ================= -->
+  <rect class="box" x="560" y="850" width="280" height="80"/>
+  <text class="title" x="700" y="878" text-anchor="middle">Laptop – app.py (AI)</text>
+  <text class="pin" x="700" y="900" text-anchor="middle">Teachable Machine model</text>
+  <path class="wifi" d="M240 790 V890 H560"/>
+  <text x="400" y="882" text-anchor="middle" font-size="12" fill="#555">Wi-Fi: photo → WET/DRY</text>
+
+  <rect class="box" x="1070" y="850" width="280" height="80"/>
+  <text class="title" x="1210" y="878" text-anchor="middle">Firebase + Website</text>
+  <text class="pin" x="1210" y="900" text-anchor="middle">users · bins · logs</text>
+  <path class="wifi" d="M840 770 H960 V890 H1070"/>
+  <text x="960" y="912" text-anchor="middle" font-size="12" fill="#555">Wi-Fi</text>
+
+  <!-- ================= LEGEND ================= -->
+  <g font-size="12">
+    <text x="20" y="955" font-weight="bold">Legend:</text>
+    <line x1="80" y1="951" x2="110" y2="951" class="spi"/><text x="115" y="955">SPI</text>
+    <line x1="150" y1="951" x2="180" y2="951" class="i2c"/><text x="185" y="955">I2C</text>
+    <line x1="220" y1="951" x2="250" y2="951" class="sig"/><text x="255" y="955">Signal</text>
+    <line x1="310" y1="951" x2="340" y2="951" class="uart"/><text x="345" y="955">UART</text>
+    <line x1="395" y1="951" x2="425" y2="951" class="p12"/><text x="430" y="955">Power</text>
+    <line x1="485" y1="951" x2="515" y2="951" class="wifi"/><text x="520" y="955">Wi-Fi</text>
+    <text x="580" y="955" fill="#c62828" font-weight="bold">ALL GROUNDS (adapter, buck, ESP32, CAM, servo, sensors, relay) MUST BE CONNECTED TOGETHER</text>
+  </g>
+</svg>
