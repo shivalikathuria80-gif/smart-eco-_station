@@ -45,6 +45,9 @@ IMAGE_SIZE = 224  # Teachable Machine's default input size
 # Edit these to match the class names you actually typed into Teachable Machine.
 DRY_LABELS = ["dry", "recyclable", "plastic", "paper", "metal"]
 WET_LABELS = ["wet", "organic", "food", "compost"]
+# Optional third class trained on photos of the EMPTY flap. Stops people
+# scanning a card with nothing on the flap and still getting points.
+EMPTY_LABELS = ["empty", "nothing", "background", "none"]
 
 app = Flask(__name__)
 model = load_model(MODEL_PATH, compile=False)
@@ -52,6 +55,10 @@ model = load_model(MODEL_PATH, compile=False)
 with open(LABELS_PATH, "r") as f:
     # labels.txt lines look like "0 Dry" — strip the leading index.
     class_names = [line.strip().split(" ", 1)[-1] for line in f if line.strip()]
+
+# Warm-up: the first predict() is slow (several seconds) and would make the
+# first real item time out on the ESP32, so run one dummy prediction now.
+model.predict(np.zeros((1, IMAGE_SIZE, IMAGE_SIZE, 3), dtype=np.float32), verbose=0)
 
 
 def preprocess(image_bytes):
@@ -64,6 +71,8 @@ def preprocess(image_bytes):
 
 def map_to_stream(label):
     lower = label.lower()
+    if any(word in lower for word in EMPTY_LABELS):
+        return "NONE"
     if any(word in lower for word in DRY_LABELS):
         return "DRY"
     if any(word in lower for word in WET_LABELS):

@@ -17,6 +17,10 @@ Tensorflow → Keras) in `ClassifierServer/`, run `pip install -r requirements.t
 then `python app.py`, and copy the URL it prints into `SERVER_URL`. The PC must
 stay on and on the same Wi-Fi as the station.
 
+**Train a third class called `Empty`** (photos of the empty flap) next to Wet and
+Dry. The station then refuses to give points when nothing was put in. Results
+below 60 % confidence (`MIN_CONFIDENCE`) are also treated as "no item".
+
 ## Wiring (Main ESP32)
 
 | Part | Pin | ESP32 |
@@ -39,6 +43,9 @@ stay on and on the same Wi-Fi as the station.
 1. **Libraries** (Library Manager): `MFRC522`, `ESP32Servo`, `LiquidCrystal I2C`.
 2. **Main sketch:** set `WIFI_SSID`, `WIFI_PASSWORD`, `STATION_ID`, `BIN_DEPTH_CM`.
    If your Firebase rules block unauthenticated writes, put a database secret in `FIREBASE_AUTH`.
+   On boot the LCD shows **Firebase OK** or **Firebase FAILED**. FAILED means a wrong
+   URL, no Wi-Fi, or database rules that block the ESP32 (it needs to read `users` and
+   write `users/*/points`, `bins` and `logs`).
 3. **Camera model:** on [Edge Impulse](https://edgeimpulse.com) create an image-classification
    project with labels `wet` and `dry` (≈100+ photos each, taken by the ESP32-CAM on the flap),
    export as an **Arduino library**, add the .zip, and fix the `#include` at the top of
@@ -48,6 +55,6 @@ stay on and on the same Wi-Fi as the station.
 
 ## What goes to Firebase
 
-- `/users/{UID}/points` – +10 per sorted item
+- `/users/{UID}/points` – +10 per sorted item (atomic server-side increment, so it can't overwrite a balance)
 - `/bins/STATION-01` – `{ zone, columns: { wet, dry }, updated }` every 15 s → Authority Portal bin cards (warning ≥75 %, critical ≥95 %)
 - `/logs` – scans, rewards and "bin full" alerts → portal event feed
