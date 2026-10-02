@@ -106,10 +106,10 @@ void classify() {
   http.end();
   Serial.println("  server: " + body);
 
-  // app.py returns {"label": ..., "confidence": ..., "stream": "WET"|"DRY"|null}
+  // app.py returns {"label": ..., "confidence": ..., "stream": "WET"|"DRY"|"NONE"|null}
   String stream = jsonString(body, "stream");
   float conf = jsonFloat(body, "confidence");
-  if (stream == "WET" || stream == "DRY") Serial.printf("RESULT:%s:%.2f\n", stream.c_str(), conf);
+  if (stream == "WET" || stream == "DRY" || stream == "NONE") Serial.printf("RESULT:%s:%.2f\n", stream.c_str(), conf);
   else Serial.println("ERROR:UNMAPPED_LABEL");
 }
 
@@ -129,8 +129,13 @@ void setup() {
                                                : String("ERROR:WIFI"));
 }
 
+unsigned long lastWifiRetry = 0;
+
 void loop() {
-  if (WiFi.status() != WL_CONNECTED) WiFi.reconnect();
+  if (WiFi.status() != WL_CONNECTED && millis() - lastWifiRetry > 10000) {
+    WiFi.reconnect();
+    lastWifiRetry = millis();
+  }
   if (Serial.available()) {
     String cmd = Serial.readStringUntil('\n');
     cmd.trim();

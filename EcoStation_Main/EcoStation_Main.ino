@@ -45,6 +45,7 @@ const char* STATION_ID    = "STATION-01";     // shows as the bin card title
 const char* STATION_ZONE  = "School Block A"; // shows under the bin card title
 
 const int   POINTS_PER_ITEM = 10;
+const float MIN_CONFIDENCE  = 0.60;  // below this the item is not sorted / not rewarded
 
 // Bin geometry (cm) - measure your own dustbins!
 const float BIN_DEPTH_CM = 40.0;  // sensor to bottom of empty bin
@@ -61,6 +62,7 @@ const unsigned long LOCK_OPEN_TIME   = 5000;   // time lid stays unlocked
 const unsigned long ITEM_SETTLE_TIME = 1500;   // wait for item to rest on flap
 const unsigned long CAM_TIMEOUT      = 8000;
 const unsigned long BIN_UPLOAD_EVERY = 15000;
+const unsigned long WIFI_RETRY_EVERY = 10000;
 
 // ------------------------------------------------------------------- PINS --
 // RC522 (SPI): SCK 18, MISO 19, MOSI 23
@@ -92,6 +94,7 @@ HardwareSerial CamSerial(2);
 int wetLevel = 0, dryLevel = 0;
 bool wetAlertSent = false, dryAlertSent = false;
 unsigned long lastBinUpload = 0;
+unsigned long lastWifiRetry = 0;
 
 // ================================================================ HELPERS ==
 void beep(int times, int ms = 80) {
@@ -180,14 +183,15 @@ String getUserName(const String& uid) {
   return r.substring(1, r.length() - 1);  // strip JSON quotes
 }
 
-// Adds points, returns new total (-1 on failure)
+// Adds points atomically on the Firebase server (same as the website's
+// transaction), so a failed read can never overwrite a balance with 0.
+// Returns the new total, or -1 on failure.
 long addPoints(const String& uid, int delta) {
   String path = "users/" + urlEncode(uid) + "/points";
-  String r = firebase("GET", path);
-  long current = (r.length() && r != "null") ? r.toInt() : 0;
-  long total = current + delta;
-  if (firebase("PUT", path, String(total)) == "") return -1;
-  return total;
+  String r = firebase("PUT", path, "{\".sv\":{\"increment\":" + String(delta) + "}}");
+  r.trim();
+  if (r == "") return -1;
+  return r.toInt();
 }
 
 void uploadBinLevels() {
@@ -234,8 +238,9 @@ void updateBinLevels() {
 }
 
 // ============================================================== ESP32-CAM ==
-// Sends "CAPTURE", expects "RESULT:WET:0.93" or "RESULT:DRY:0.88".
-// Returns "WET", "DRY" or "" on timeout/error.
+// Sends "CAPTURE", expects "RESULT:WET:0.93", "RESULT:DRY:0.88" or
+// "RESULT:NONE:0.97" (nothing on the flap).
+// Returns "WET", "DRY", "NONE" (empty / not sure) or "" on timeout/error.
 String classifyWaste() {
   while (CamSerial.available()) CamSerial.read();   // flush old data
   CamSerial.println("CAPTURE");
@@ -247,8 +252,14 @@ String classifyWaste() {
     if (c == '\n') {
       line.trim();
       Serial.println("[CAM] " + line);
-      if (line.startsWith("RESULT:WET")) return "WET";
-      if (line.startsWith("RESULT:DRY")) return "DRY";
+      if (line.startsWith("RESULT:")) {
+        int c2 = line.indexOf(':', 7);
+        String label = line.substring(7, c2 < 0 ? line.length() : c2);
+        float conf = c2 < 0 ? 1.0 : line.substring(c2 + 1).toFloat();
+        if ((label == "WET" || label == "DRY") && conf >= MIN_CONFIDENCE) return label;
+        return "NONE";
+      }
+      if (line.startsWith("ERROR:")) return "";
       line = "";                                    // ignore debug lines
     } else line += c;
   }
@@ -294,15 +305,27 @@ void setup() {
   }
   delay(1500);
 
+  // Boot check: prove the database link works before users arrive
   updateBinLevels();
-  uploadBinLevels();
+  String ok = "";
+  if (WiFi.status() == WL_CONNECTED) {
+    uploadBinLevels();
+    ok = firebase("GET", "bins/" + String(STATION_ID) + "/zone");
+  }
+  Serial.println(ok.length() ? "[Firebase] link OK" : "[Firebase] link FAILED - check URL / rules / FIREBASE_AUTH");
+  lcdShow(ok.length() ? "Firebase OK" : "Firebase FAILED", ok.length() ? STATION_ID : "Check rules/auth");
+  if (!ok.length()) beep(3, 300);
+  delay(1500);
   lastBinUpload = millis();
   lcdIdle();
 }
 
 // ================================================================== LOOP ==
 void loop() {
-  if (WiFi.status() != WL_CONNECTED) WiFi.reconnect();
+  if (WiFi.status() != WL_CONNECTED && millis() - lastWifiRetry > WIFI_RETRY_EVERY) {
+    WiFi.reconnect();                                // retry every 10 s, not every loop
+    lastWifiRetry = millis();
+  }
 
   // Periodic fill-level report (LCD + website)
   if (millis() - lastBinUpload > BIN_UPLOAD_EVERY) {
@@ -347,6 +370,14 @@ void loop() {
     lcdShow("Camera error", "Try again");
     beep(2, 200);
     delay(2000);
+    lcdIdle();
+    return;
+  }
+  if (type == "NONE") {                            // empty flap or unsure -> no points
+    lcdShow("No waste seen", "No points given");
+    beep(2, 200);
+    pushLog("scan", name + " (" + uid + ") - no item detected, no points");
+    delay(2500);
     lcdIdle();
     return;
   }
